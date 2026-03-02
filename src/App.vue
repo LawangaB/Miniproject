@@ -13,7 +13,7 @@ const products = ref<Product[]>([])
 
 const fetchProducts = async () => {
     try{
-        const response = await fetch('https://dummyjson.com/products')
+        const response = await fetch('https://dummyjson.com/products/search?q=phone')
         console.log(response)
         const data = await response.json()
         console.log(data)
