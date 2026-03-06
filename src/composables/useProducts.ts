@@ -2,14 +2,19 @@
 import { ref, watch, computed } from 'vue'
 import type { Product, Category } from '../types'
 
+// --- GLOBAL STATE ---
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
 const selectedCategory = ref<string>('')
 const searchQuery = ref<string>('')
+const displayLimit = ref<number>(30)
 const isLoading = ref(false)
 const selectedProduct = ref<any>(null)
+const sortOrder = ref<'default' | 'asc' | 'desc'>('default')
 
 export function useProducts() {
+  
+  // --- FUNCTIONS ---
   const fetchCategories = async () => {
     try {
       const response = await fetch('https://dummyjson.com/products/categories')
@@ -22,16 +27,23 @@ export function useProducts() {
   const fetchProducts = async () => {
     isLoading.value = true
     try {
-      let url = ''
+      let baseUrl = 'https://dummyjson.com/products'
+      
       if (searchQuery.value.trim() !== '') {
-        url = `https://dummyjson.com/products/search?q=${encodeURIComponent(searchQuery.value)}`
+        baseUrl = 'https://dummyjson.com/products/search'
       } else if (selectedCategory.value) {
-        url = `https://dummyjson.com/products/category/${selectedCategory.value}`
-      } else {
-        url = 'https://dummyjson.com/products'
+        baseUrl = `https://dummyjson.com/products/category/${selectedCategory.value}`
       }
 
-      const response = await fetch(url)
+      const url = new URL(baseUrl)
+
+      if (searchQuery.value.trim() !== '') {
+        url.searchParams.append('q', searchQuery.value)
+      }
+      
+      url.searchParams.append('limit', displayLimit.value.toString())
+
+      const response = await fetch(url.toString())
       const data = await response.json()
       products.value = data.products
     } catch (error) {
@@ -51,13 +63,29 @@ export function useProducts() {
     document.body.style.overflow = 'auto'
   }
 
-  // Reset search when category changes
+  // --- COMPUTED PROPERTIES ---
+  const sortedProducts = computed(() => {
+    const items = [...products.value] 
+    
+    if (sortOrder.value === 'asc') {
+      return items.sort((a, b) => a.price - b.price)
+    } else if (sortOrder.value === 'desc') {
+      return items.sort((a, b) => b.price - a.price)
+    }
+    
+    return items
+  })
+
+  // --- WATCHERS ---
   watch(selectedCategory, () => {
     searchQuery.value = '' 
     fetchProducts()
   })
 
-  // Basic debounce for search query
+  watch(displayLimit, () => {
+    fetchProducts()
+  })
+
   let timeout: ReturnType<typeof setTimeout>
   watch(searchQuery, () => {
     clearTimeout(timeout)
@@ -66,13 +94,17 @@ export function useProducts() {
     }, 300)
   })
 
+  // --- EXPORTS ---
   return {
     products,
     categories,
     selectedCategory,
     searchQuery,
+    displayLimit,
     isLoading,
     selectedProduct,
+    sortOrder,
+    sortedProducts,
     fetchCategories,
     fetchProducts,
     openProductDetails,
