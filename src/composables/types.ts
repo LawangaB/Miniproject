@@ -1,4 +1,5 @@
-// src/types/index.ts
+// src/types.ts
+
 export interface Review {
   rating: number
   comment: string
@@ -49,8 +50,4 @@ export interface Category {
   slug: string
   name: string
   url: string
-}
-
-export interface CartItem extends Product {
-  quantity: number
 }

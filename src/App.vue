@@ -1,30 +1,41 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useProducts } from './composables/useProducts'
 import { useTheme } from './composables/useTheme'
 import { useSidebar } from './composables/useSidebar'
+import type { Product } from './types'
 
 import Sidebar from './components/layout/SideBar.vue'
 import SearchBar from './components/ui/SearchBar.vue'
 import HeroBanner from './components/products/banner.vue'
 import ProductCard from './components/products/ProductCard.vue'
 import ThemeToggle from './components/ui/ThemeToggle.vue'
+// 1. We MUST import the new Modal component here
+import ProductModal from './components/products/ProductModal.vue'
 
-// Notice we are importing sortedProducts here now!
 const { products, sortedProducts, selectedCategory, displayLimit, fetchCategories, fetchProducts } = useProducts()
 const { isSidebarOpen, toggleSidebar } = useSidebar()
 
-// Initialize the theme state (checks localStorage on load)
 useTheme() 
 
 onMounted(() => {
   fetchCategories()
   fetchProducts()
 })
+
+// 2. MODAL STATE AND LOGIC
+const isProductModalOpen = ref(false)
+const selectedModalProduct = ref<Product | null>(null)
+
+const openProductDetails = (product: Product) => {
+  console.log("Card clicked! Opening:", product.title) // Added a log so we can see if the click works!
+  selectedModalProduct.value = product
+  isProductModalOpen.value = true
+}
 </script>
 
 <template>
-    <div class="flex min-h-screen bg-slate-50 font-sans text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-x-hidden">    
+  <div class="flex min-h-screen bg-slate-50 font-sans text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-x-hidden">
     <Sidebar />
 
     <main class="flex-1 px-4 lg:px-8 py-8 relative min-w-0 transition-all duration-300">
@@ -32,13 +43,11 @@ onMounted(() => {
       <div class="absolute top-8 left-4 lg:left-8 z-50">
         <button 
           @click="toggleSidebar" 
-          class="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm"
-          aria-label="Toggle Sidebar"
+          class="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors shadow-sm cursor-pointer"
         >
           <svg v-if="!isSidebarOpen" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
-
           <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
           </svg>
@@ -60,7 +69,7 @@ onMounted(() => {
           <h3 class="text-2xl font-bold text-slate-900 dark:text-slate-100">
             {{ selectedCategory ? 'Category: ' + selectedCategory : 'All Products' }}
           </h3>
-          <p class="text-slate-500 dark:text-slate-400">Showing {{ products.length }} items</p>
+          <p class="text-slate-500 dark:text-slate-400">Showing {{ sortedProducts.length }} items</p>
         </div>
 
         <div class="flex items-center gap-3">
@@ -84,9 +93,16 @@ onMounted(() => {
           v-for="product in sortedProducts" 
           :key="product.id" 
           :product="product"
+          @open-details="openProductDetails(product)"
         />
       </ul>
 
     </main>
+
+    <ProductModal 
+      :product="selectedModalProduct"
+      :is-open="isProductModalOpen"
+      @close="isProductModalOpen = false"
+    />
   </div>
 </template>
