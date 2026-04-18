@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { toRef, computed } from 'vue'
+import { toRef, computed, ref } from 'vue'
 import type { Product } from '../../types'
+import { useCart } from '../../composables/usecart'
 
 const props = withDefaults(defineProps<{
   product: Product | null
@@ -12,6 +13,9 @@ const props = withDefaults(defineProps<{
 
 const product = toRef(props, 'product')
 const isOpen = toRef(props, 'isOpen')
+const { cart, cartCount, addToCart: addToCartComposable } = useCart()
+
+const addedToCart = ref(false)
 
 const averageRating = computed(() => {
   if (!product.value || product.value.reviews.length === 0) return 0
@@ -30,7 +34,21 @@ const originalPrice = computed(() => {
 
 const emit = defineEmits<{
   (event: 'close'): void
+  (event: 'cart-updated'): void
 }>()
+
+const handleAddToCart = () => {
+  if (product.value) {
+    console.log('Modal: Adding to cart', product.value.title)
+    addToCartComposable(product.value)
+    console.log('Modal: Cart after adding:', cart.value)
+    addedToCart.value = true
+    emit('cart-updated')
+    setTimeout(() => {
+      addedToCart.value = false
+    }, 2000)
+  }
+}
 </script>
 
 <template>
@@ -41,14 +59,22 @@ const emit = defineEmits<{
   >
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative animate-fade-in-up">
       
-      <button 
-        @click="$emit('close')" 
-        class="absolute top-4 right-4 z-10 p-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-full text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-sm"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+      <div class="absolute top-4 right-4 z-20 flex items-center gap-3">
+        <div class="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          {{ cartCount }}
+        </div>
+        <button 
+          @click="$emit('close')" 
+          class="p-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-full text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-sm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
       <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col md:flex-row">
         
@@ -153,13 +179,21 @@ const emit = defineEmits<{
             </div>
           </div>
 
-          <div class="mt-auto">
-            <button class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition-all hover:-translate-y-0.5 cursor-pointer flex items-center justify-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          <div class="mt-auto space-y-2">
+            <button 
+              @click="handleAddToCart" 
+              :class="['w-full py-4 font-bold rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer flex items-center justify-center gap-2', addedToCart ? 'bg-green-600 hover:bg-green-700 shadow-green-600/30' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30']"
+              class="text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" :class="['h-5 w-5', addedToCart ? 'animate-bounce' : '']" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path v-if="addedToCart" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              Add to Cart - ${{ product.price }}
+              {{ addedToCart ? '✓ Added to Cart!' : `Add to Cart - $${product.price}` }}
             </button>
+            <p v-if="addedToCart" class="text-center text-sm text-green-600 font-medium">
+              Item added! Cart count: {{ cartCount }}
+            </p>
           </div>
 
         </div>
@@ -176,5 +210,15 @@ const emit = defineEmits<{
 }
 .animate-fade-in-up {
   animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleUp {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+button:active {
+  animation: scaleUp 0.2s ease-out;
 }
 </style>

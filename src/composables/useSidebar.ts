@@ -1,7 +1,7 @@
 // src/composables/useSidebar.ts
 import { ref } from 'vue'
 
-const isSidebarOpen = ref(true)
+const isSidebarOpen = ref(false)
 
 export function useSidebar() {
   const toggleSidebar = () => {

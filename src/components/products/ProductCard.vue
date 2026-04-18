@@ -28,7 +28,7 @@ const getSavingsAmount = computed(() => {
 
 <template>
   <li 
-    @click="$emit('open-details')"
+    @click="$emit('open-details', product)"
     class="cursor-pointer bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl dark:hover:shadow-slate-900/50 transition-all flex flex-col group duration-300 relative"
   >
     

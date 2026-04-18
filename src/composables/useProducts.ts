@@ -11,6 +11,7 @@ const displayLimit = ref<number>(30)
 const isLoading = ref(false)
 const selectedProduct = ref<any>(null)
 const sortOrder = ref<'default' | 'asc' | 'desc'>('default')
+const sortBy = ref<'price' | 'rating'>('price')
 
 export function useProducts() {
   
@@ -67,10 +68,18 @@ export function useProducts() {
   const sortedProducts = computed(() => {
     const items = [...products.value] 
     
-    if (sortOrder.value === 'asc') {
-      return items.sort((a, b) => a.price - b.price)
-    } else if (sortOrder.value === 'desc') {
-      return items.sort((a, b) => b.price - a.price)
+    if (sortBy.value === 'price') {
+      if (sortOrder.value === 'asc') {
+        return items.sort((a, b) => a.price - b.price)
+      } else if (sortOrder.value === 'desc') {
+        return items.sort((a, b) => b.price - a.price)
+      }
+    } else if (sortBy.value === 'rating') {
+      if (sortOrder.value === 'asc') {
+        return items.sort((a, b) => a.rating - b.rating)
+      } else if (sortOrder.value === 'desc') {
+        return items.sort((a, b) => b.rating - a.rating)
+      }
     }
     
     return items
@@ -104,6 +113,7 @@ export function useProducts() {
     isLoading,
     selectedProduct,
     sortOrder,
+    sortBy,
     sortedProducts,
     fetchCategories,
     fetchProducts,
