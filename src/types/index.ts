@@ -1,4 +1,36 @@
-// src/types/index.ts
+import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '../views/HomeView.vue'
+import ProductDetailView from '../views/ProductDetailView.vue'
+
+// --- ROUTER CONFIGURATION ---
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: HomeView
+    },
+    {
+      path: '/product/:id',
+      name: 'product-detail',
+      component: ProductDetailView,
+      props: true 
+    }
+  ],
+  // FIXED: This must be INSIDE the createRouter object
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0, behavior: 'smooth' }
+    }
+  }
+}) // This closing brace was missing
+
+export default router
+
+// --- INTERFACES ---
 export interface Review {
   rating: number
   comment: string

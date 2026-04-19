@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { toRef, ref } from 'vue'
+import { toRef, ref, watchEffect } from 'vue' // Added watchEffect
 import { useCart } from '../../composables/usecart'
+import { useAuth } from '../../composables/useAuth'
 
 const props = withDefaults(defineProps<{
   isOpen: boolean
@@ -8,9 +9,15 @@ const props = withDefaults(defineProps<{
   isOpen: false,
 })
 
-const isOpen = toRef(props, 'isOpen')
-const { cart, cartTotal } = useCart()
+const emit = defineEmits<{
+  (event: 'close'): void
+}>()
 
+const { user, isLoggedIn } = useAuth()
+const { cart, cartTotal } = useCart()
+const isOpen = toRef(props, 'isOpen')
+
+// Unified Form Data
 const formData = ref({
   firstName: '',
   lastName: '',
@@ -22,12 +29,18 @@ const formData = ref({
   cardNumber: '',
 })
 
+// Fix: Auto-fill logic now targets formData (the one used in the template)
+watchEffect(() => {
+  if (isLoggedIn.value && user.value) {
+    const names = user.value.name ? user.value.name.split(' ') : ['', '']
+    formData.value.firstName = names[0] || ''
+    formData.value.lastName = names.slice(1).join(' ') || ''
+    formData.value.email = user.value.email || ''
+  }
+})
+
 const isSubmitting = ref(false)
 const orderPlaced = ref(false)
-
-const emit = defineEmits<{
-  (event: 'close'): void
-}>()
 
 const handleSubmit = async () => {
   if (!formData.value.firstName || !formData.value.email || !formData.value.address || !formData.value.cardNumber) {
@@ -42,7 +55,6 @@ const handleSubmit = async () => {
     orderPlaced.value = true
     isSubmitting.value = false
     
-    // Show success message for 2 seconds then close
     setTimeout(() => {
       orderPlaced.value = false
       emit('close')
@@ -73,11 +85,10 @@ const resetForm = () => {
   >
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col relative animate-fade-in-up">
       
-      <!-- Header -->
       <div class="absolute top-4 right-4 z-20">
         <button 
           @click="$emit('close')" 
-          class="p-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-full text-slate-500 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer shadow-sm"
+          class="p-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-full text-slate-500 hover:text-red-500 transition-colors cursor-pointer shadow-sm"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -87,33 +98,33 @@ const resetForm = () => {
 
       <div class="p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800">
         <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Checkout</h2>
-        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Complete your purchase</p>
+        <div v-if="isLoggedIn" class="mt-2 inline-flex items-center gap-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded-md">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+          </span>
+          Authenticated: {{ user?.name }}
+        </div>
       </div>
 
-      <!-- Success Message -->
-      <div 
-        v-if="orderPlaced"
-        class="flex items-center justify-center h-96 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20"
-      >
+      <div v-if="orderPlaced" class="flex items-center justify-center h-96 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20">
         <div class="text-center">
           <div class="mb-4 flex justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-600 dark:text-green-400 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-600 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3 class="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">Order Placed!</h3>
+          <h3 class="text-2xl font-bold text-green-600 mb-2">Order Placed!</h3>
           <p class="text-slate-600 dark:text-slate-300">Thank you for your purchase</p>
         </div>
       </div>
 
-      <!-- Form Content -->
       <div v-else class="flex-1 overflow-y-auto custom-scrollbar">
         <div class="p-6 sm:p-8 space-y-6">
           
-          <!-- Order Summary -->
           <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
             <h3 class="font-bold text-slate-900 dark:text-white mb-3">Order Summary</h3>
-            <div class="space-y-2 max-h-32 overflow-y-auto">
+            <div class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
               <div v-for="item in cart" :key="item.id" class="flex justify-between text-sm">
                 <span class="text-slate-600 dark:text-slate-400">{{ item.title }} x {{ item.quantity }}</span>
                 <span class="font-semibold text-slate-900 dark:text-white">${{ (item.price * item.quantity).toFixed(2) }}</span>
@@ -125,114 +136,49 @@ const resetForm = () => {
             </div>
           </div>
 
-          <!-- Shipping Information -->
-          <div>
-            <h3 class="font-bold text-slate-900 dark:text-white mb-3">Shipping Information</h3>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">First Name *</label>
-                <input 
-                  v-model="formData.firstName"
-                  type="text" 
-                  class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                  placeholder="John"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Last Name *</label>
-                <input 
-                  v-model="formData.lastName"
-                  type="text" 
-                  class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                  placeholder="Doe"
-                />
-              </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">First Name *</label>
+              <input v-model="formData.firstName" type="text" class="input-field" placeholder="John" />
             </div>
-
-            <div class="grid grid-cols-2 gap-4 mt-4">
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Email *</label>
-                <input 
-                  v-model="formData.email"
-                  type="email" 
-                  class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                  placeholder="john@example.com"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone</label>
-                <input 
-                  v-model="formData.phone"
-                  type="tel" 
-                  class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                  placeholder="+1 (555) 000-0000"
-                />
-              </div>
-            </div>
-
-            <div class="mt-4">
-              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Address *</label>
-              <input 
-                v-model="formData.address"
-                type="text" 
-                class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                placeholder="123 Main Street"
-              />
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 mt-4">
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">City</label>
-                <input 
-                  v-model="formData.city"
-                  type="text" 
-                  class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                  placeholder="New York"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">ZIP Code</label>
-                <input 
-                  v-model="formData.zipCode"
-                  type="text" 
-                  class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                  placeholder="10001"
-                />
-              </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Last Name *</label>
+              <input v-model="formData.lastName" type="text" class="input-field" placeholder="Doe" />
             </div>
           </div>
 
-          <!-- Payment Information -->
-          <div>
-            <h3 class="font-bold text-slate-900 dark:text-white mb-3">Payment Information</h3>
+          <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Card Number *</label>
-              <input 
-                v-model="formData.cardNumber"
-                type="text" 
-                class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                placeholder="1234 5678 9012 3456"
-              />
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Email *</label>
+              <input v-model="formData.email" type="email" class="input-field" placeholder="john@example.com" />
             </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+              <input v-model="formData.phone" type="tel" class="input-field" placeholder="+1 (555) 000-0000" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Address *</label>
+            <input v-model="formData.address" type="text" class="input-field" placeholder="123 Main Street" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <input v-model="formData.city" type="text" class="input-field" placeholder="City" />
+            <input v-model="formData.zipCode" type="text" class="input-field" placeholder="ZIP Code" />
+          </div>
+
+          <div>
+            <h3 class="font-bold text-slate-900 dark:text-white mb-3">Payment</h3>
+            <input v-model="formData.cardNumber" type="text" class="input-field" placeholder="Card Number (1234 ...)" />
           </div>
         </div>
       </div>
 
-      <!-- Footer -->
       <div class="p-6 sm:p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
-        <button 
-          @click="$emit('close')" 
-          :disabled="isSubmitting"
-          class="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-semibold disabled:opacity-50 cursor-pointer"
-        >
-          Cancel
-        </button>
-        <button 
-          @click="handleSubmit"
-          :disabled="isSubmitting || cart.length === 0"
-          class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors font-semibold disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-        >
-          <svg v-if="isSubmitting" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button @click="$emit('close')" :disabled="isSubmitting" class="flex-1 btn-secondary">Cancel</button>
+        <button @click="handleSubmit" :disabled="isSubmitting || cart.length === 0" class="flex-1 btn-primary">
+          <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           {{ isSubmitting ? 'Processing...' : 'Place Order' }}
@@ -243,6 +189,16 @@ const resetForm = () => {
 </template>
 
 <style scoped>
+@reference "../../assets/main.css";
+.input-field {
+  @apply w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-colors;
+}
+.btn-primary {
+  @apply px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-semibold disabled:opacity-50 flex items-center justify-center gap-2;
+}
+.btn-secondary {
+  @apply px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-semibold disabled:opacity-50;
+}
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }

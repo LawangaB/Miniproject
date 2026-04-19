@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useProducts } from '../../composables/useProducts'
 
 const { categories, selectedCategory } = useProducts()
@@ -21,16 +20,19 @@ const getColorForIndex = (index: number) => {
 </script>
 
 <template>
-  <div v-if="categories.length > 0" class="mb-8 px-4 lg:px-8">
-    <p class="text-xs uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest mb-3">Quick Filters</p>
-    <div class="flex flex-wrap gap-2 md:flex-nowrap md:overflow-x-auto md:pb-2 mt-4">
+  <div v-if="categories.length > 0" class="w-full">
+    <p class="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest mb-1">
+      Quick Filters
+    </p>
+
+    <div class="flex flex-nowrap items-center gap-3 overflow-x-auto py-2 no-scrollbar scroll-smooth">
       <button 
         @click="selectedCategory = ''"
         :class="[
           !selectedCategory 
-            ? 'bg-indigo-600 dark:bg-indigo-500 text-white' 
+            ? 'bg-indigo-600 dark:bg-indigo-500 text-white scale-105 shadow-md' 
             : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700',
-          'px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 shadow-sm'
+          'px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 shadow-sm cursor-pointer'
         ]"
       >
         All
@@ -42,7 +44,7 @@ const getColorForIndex = (index: number) => {
         @click="selectedCategory = cat.slug"
         :class="[
           selectedCategory === cat.slug
-            ? 'ring-2 ring-indigo-500 bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300'
+            ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 scale-105'
             : getColorForIndex(index),
           'px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 shadow-sm cursor-pointer border border-transparent'
         ]"
@@ -52,3 +54,16 @@ const getColorForIndex = (index: number) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 3. Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+</style>

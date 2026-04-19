@@ -3,11 +3,15 @@ import { useProducts } from '../../composables/useProducts'
 import { useCart } from '../../composables/usecart' 
 import { useSidebar } from '../../composables/useSidebar'
 import { watch, ref } from 'vue'
+import { useRouter } from 'vue-router' // 1. Import useRouter
+
+const router = useRouter() // 2. Initialize router
+//const isSidebarOpen = ref(true)
 
 const { categories, selectedCategory, sortOrder, sortBy } = useProducts()
 const { cart, cartCount, cartTotal, removeFromCart } = useCart()
 const { isSidebarOpen, toggleSidebar } = useSidebar()
-const isCategoriesOpen = ref(true)
+const isCategoriesOpen = ref(false)
 
 const emit = defineEmits<{
   (event: 'checkout-clicked'): void
@@ -17,13 +21,35 @@ watch(cart, (newCart) => {
   console.log('Sidebar: Cart changed!', newCart)
   console.log('Sidebar: Cart count is now:', cartCount.value)
 }, { deep: true })
+
+// 3. Create a unified function for changing categories
+const handleCategorySelect = (slug: string) => {
+  selectedCategory.value = slug
+  // Redirect to home if we aren't already there
+  if (router.currentRoute.value.path !== '/') {
+    router.push('/')
+  }
+}
+
+// 4. Create a unified function for changing sorting
+const handleSortSelect = (
+  newSortBy: 'price' | 'rating', 
+  newSortOrder: 'asc' | 'desc' | 'default'
+) => {
+  sortBy.value = newSortBy
+  sortOrder.value = newSortOrder
+  
+  if (router.currentRoute.value.path !== '/') {
+    router.push('/')
+  }
+}
 </script>
 
 <template>
   <aside 
     :class="[
-      isSidebarOpen ? 'ml-0' : '-ml-60',
-      'w-60 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 hidden md:flex flex-col sticky top-0 h-screen transition-all duration-300 ease-in-out z-50 overflow-hidden'
+      isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+      'fixed top-0 left-0 h-screen w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transform transition-transform duration-300 ease-in-out overflow-hidden'
     ]"
   >
     <div class="w-60 flex flex-col h-full">
@@ -54,11 +80,11 @@ watch(cart, (newCart) => {
         </div>
         
         <div v-show="isCategoriesOpen" class="space-y-1">
-          <button @click="selectedCategory = ''" :class="[!selectedCategory ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+          <button @click="handleCategorySelect('')" :class="[!selectedCategory ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
             All Products
           </button>
           
-          <button v-for="cat in categories" :key="cat.slug" @click="selectedCategory = cat.slug" :class="[selectedCategory === cat.slug ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium capitalize hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+          <button v-for="cat in categories" :key="cat.slug" @click="handleCategorySelect(cat.slug)" :class="[selectedCategory === cat.slug ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium capitalize hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
             {{ cat.name }}
           </button>
         </div>
@@ -67,15 +93,15 @@ watch(cart, (newCart) => {
           <p class="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest px-4">Sort By Price</p>
         </div>
 
-        <button @click="{ sortBy = 'price'; sortOrder = 'default' }" :class="[sortBy === 'price' && sortOrder === 'default' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+        <button @click="handleSortSelect('price', 'default')" :class="[sortBy === 'price' && sortOrder === 'default' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
           Default
         </button>
 
-        <button @click="{ sortBy = 'price'; sortOrder = 'asc' }" :class="[sortBy === 'price' && sortOrder === 'asc' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center cursor-pointer">
+        <button @click="handleSortSelect('price', 'asc')" :class="[sortBy === 'price' && sortOrder === 'asc' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center cursor-pointer">
           Low to High <span>↑</span>
         </button>
 
-        <button @click="{ sortBy = 'price'; sortOrder = 'desc' }" :class="[sortBy === 'price' && sortOrder === 'desc' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center cursor-pointer">
+        <button @click="handleSortSelect('price', 'desc')" :class="[sortBy === 'price' && sortOrder === 'desc' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center cursor-pointer">
           High to Low <span>↓</span>
         </button>
 
@@ -83,11 +109,11 @@ watch(cart, (newCart) => {
           <p class="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest px-4">Sort By Rating</p>
         </div>
 
-        <button @click="{ sortBy = 'rating'; sortOrder = 'asc' }" :class="[sortBy === 'rating' && sortOrder === 'asc' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center cursor-pointer">
+        <button @click="handleSortSelect('rating', 'asc')" :class="[sortBy === 'rating' && sortOrder === 'asc' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center cursor-pointer">
           Low to High <span>↑</span>
         </button>
 
-        <button @click="{ sortBy = 'rating'; sortOrder = 'desc' }" :class="[sortBy === 'rating' && sortOrder === 'desc' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center cursor-pointer">
+        <button @click="handleSortSelect('rating', 'desc')" :class="[sortBy === 'rating' && sortOrder === 'desc' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center cursor-pointer">
           High to Low <span>↓</span>
         </button>
         
