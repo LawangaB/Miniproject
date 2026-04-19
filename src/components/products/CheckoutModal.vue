@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { toRef, ref, watchEffect } from 'vue' // Added watchEffect
+import { toRef, ref, watchEffect } from 'vue'
+import { useRouter } from 'vue-router' // 1. Import the router
 import { useCart } from '../../composables/usecart'
 import { useAuth } from '../../composables/useAuth'
 
@@ -13,11 +14,13 @@ const emit = defineEmits<{
   (event: 'close'): void
 }>()
 
+const router = useRouter() // 2. Initialize router
 const { user, isLoggedIn } = useAuth()
-const { cart, cartTotal } = useCart()
+
+// 3. Bring in placeOrder from your useCart composable
+const { cart, cartTotal, placeOrder } = useCart() 
 const isOpen = toRef(props, 'isOpen')
 
-// Unified Form Data
 const formData = ref({
   firstName: '',
   lastName: '',
@@ -29,7 +32,6 @@ const formData = ref({
   cardNumber: '',
 })
 
-// Fix: Auto-fill logic now targets formData (the one used in the template)
 watchEffect(() => {
   if (isLoggedIn.value && user.value) {
     const names = user.value.name ? user.value.name.split(' ') : ['', '']
@@ -50,16 +52,26 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true
   
-  // Simulate order processing
+  // Simulate network delay for realism
   setTimeout(() => {
-    orderPlaced.value = true
-    isSubmitting.value = false
+    // 4. Actually place the order using the global state function
+    // We pass a copy of the formData as the shipping details
+    const orderId = placeOrder({ ...formData.value })
     
-    setTimeout(() => {
-      orderPlaced.value = false
-      emit('close')
-      resetForm()
-    }, 2000)
+    if (orderId) {
+      orderPlaced.value = true
+      isSubmitting.value = false
+      
+      // Wait 2 seconds so the user sees the green "Order Placed!" animation
+      setTimeout(() => {
+        orderPlaced.value = false
+        emit('close')
+        resetForm()
+        
+        // 5. Send them to the new Orders page
+        router.push('/orders')
+      }, 2000)
+    }
   }, 1500)
 }
 

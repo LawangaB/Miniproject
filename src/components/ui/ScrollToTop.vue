@@ -2,53 +2,63 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const isVisible = ref(false)
+let scrollContainer: HTMLElement | null = null
 
-// Check scroll position
+// 1. Check the scroll position of the <main> element, not the window
 const handleScroll = () => {
-  // Show button after scrolling down 300px
-  isVisible.value = window.scrollY > 300
+  if (scrollContainer) {
+    isVisible.value = scrollContainer.scrollTop > 300
+  }
 }
 
+// 2. Scroll the <main> element back to 0
 const scrollToTop = () => {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth' // This creates the "glide" effect
-  })
+  if (scrollContainer) {
+    scrollContainer.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  }
 }
 
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
+  // Grab the specific element that is handling the scrolling in App.vue
+  scrollContainer = document.querySelector('main')
+  
+  if (scrollContainer) {
+    scrollContainer.addEventListener('scroll', handleScroll)
+  }
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
+  if (scrollContainer) {
+    scrollContainer.removeEventListener('scroll', handleScroll)
+  }
 })
 </script>
 
 <template>
-  <Transition
-    enter-active-class="transition duration-300 ease-out"
-    enter-from-class="translate-y-10 opacity-0"
-    enter-to-class="translate-y-0 opacity-100"
-    leave-active-class="transition duration-200 ease-in"
-    leave-from-class="translate-y-0 opacity-100"
-    leave-to-class="translate-y-10 opacity-0"
-  >
-    <button
-      v-show="isVisible"
+  <transition name="fade">
+    <button 
+      v-show="isVisible" 
       @click="scrollToTop"
-      class="fixed bottom-8 right-8 z-[60] p-3 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all cursor-pointer group"
-      aria-label="Scroll to top"
+      class="fixed bottom-8 right-8 p-3 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all z-50"
     >
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        class="h-6 w-6 transition-transform group-hover:-translate-y-1" 
-        fill="none" 
-        viewBox="0 0 24 24" 
-        stroke="currentColor"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" />
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
       </svg>
     </button>
-  </Transition>
+  </transition>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+</style>

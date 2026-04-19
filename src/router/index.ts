@@ -2,6 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProductDetailView from '../views/ProductDetailView.vue'
+import OrdersView from '../views/OrdersView.vue' // 1. Import your new Orders View
 
 const router = createRouter({
   history: createWebHistory(),
@@ -9,13 +10,19 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView // ERROR CHECK: Ensure this is NOT ProductDetailView
+      component: HomeView
     },
     {
       path: '/product/:id',
       name: 'product-detail',
       component: ProductDetailView,
       props: true
+    },
+    // 2. Add the route for the checkout success page
+    {
+      path: '/orders',
+      name: 'orders',
+      component: OrdersView
     }
   ]
 })
