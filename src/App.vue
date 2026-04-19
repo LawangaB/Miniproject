@@ -1,89 +1,61 @@
 <script setup lang="ts">
-import { ref , onMounted} from 'vue'
+import { ref, watch } from 'vue' // Cleaned up duplicate imports
+import { useRoute } from 'vue-router'
+import { useTheme } from './composables/useTheme'
+import { useSidebar } from './composables/useSidebar'
+import ScrollToTop from './components/ui/ScrollToTop.vue'
+import Sidebar from './components/layout/SideBar.vue'
+import CheckoutModal from './components/products/CheckoutModal.vue'
+import TopSection from './components/layout/TopSection.vue'
 
-interface Product {
-    id: number
-    title: string
-    description: string
-    price: number
-    [key: string]: any
-}
+// 1. Initialize Route and Sidebar
+const route = useRoute()
+const { isSidebarOpen } = useSidebar()
+const isCheckoutModalOpen = ref(false)
 
-const products = ref<Product[]>([])
+// 2. Create the Template Ref for the main container
+const mainContent = ref<HTMLElement | null>(null)
 
-const fetchProducts = async () => {
-    try{
-        const response = await fetch('https://dummyjson.com/products/search?q=phone')
-        console.log(response)
-        const data = await response.json()
-        console.log(data)
-        products.value = data.products
-        console.log(products.value)
-    } catch (error) {
-        console.error('Error fetching products:', error)
-    }finally {
-        console.log('Fetch products attempt completed.')
-    }
-    
-}
-onMounted(() => {
-    fetchProducts()
+// 3. Watch for route changes to reset scroll position
+watch(() => route.path, () => {
+  if (mainContent.value) {
+    // We target the mainContent ref because it is the actual scrolling element
+    mainContent.value.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 })
+
+// 4. Initialize Theme
+useTheme() 
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 p-8 font-sans">
+  <div 
+    class="flex h-screen overflow-hidden w-full bg-slate-50 font-sans text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-all duration-300 ease-in-out"
+    :class="isSidebarOpen ? 'pl-60' : 'pl-0'"
+  >
     
-    <header class="mb-8">
-      <h1 class="text-3xl font-bold text-slate-900">Featured Products</h1>
-      <p class="text-slate-500 mt-1">Browse our latest arrivals</p>
-    </header>
+    <Sidebar @checkout-clicked="isCheckoutModalOpen = true" />
 
-    <ul class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+    <main 
+      ref="mainContent"
+      class="flex-1 h-full overflow-y-auto relative flex flex-col custom-scrollbar"
+    >
       
-      <li 
-        v-for="product in products" 
-        :key="product.id"
-        class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col group"
-      >
-        <div class="relative h-56 bg-slate-100 flex items-center justify-center p-4 overflow-hidden">
-          <img 
-            :src="product.thumbnail" 
-            :alt="product.title" 
-            class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
-          />
-          <span class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-bold text-slate-700 shadow-sm uppercase tracking-wider">
-            {{ product.category }}
-          </span>
-        </div>
+      <div class="sticky top-0 z-50 w-full backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors duration-300">
+        <TopSection />
+      </div>
 
-        <div class="p-5 flex flex-col flex-1">
-          
-          <div class="flex justify-between items-start gap-2 mb-2">
-            <h2 class="text-lg font-bold text-slate-900 leading-tight line-clamp-1" :title="product.title">
-              {{ product.title }}
-            </h2>
-            <div class="flex items-center gap-1 text-amber-500 text-sm font-bold shrink-0">
-              ★ {{ product.rating }}
-            </div>
-          </div>
+      <div class="flex-1">
+        <router-view />
+      </div>
 
-          <p class="text-slate-500 text-sm line-clamp-2 mb-4 flex-1">
-            {{ product.description }}
-          </p>
+    </main>
 
-          <div class="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-            <span class="text-2xl font-black text-indigo-600">
-              ${{ product.price }}
-            </span>
-            <button class="px-4 py-2 bg-slate-900 hover:bg-blue-600 text-white text-sm font-semibold rounded-lg transition-colors duration-200 cursor-pointer">
-              Add to Cart
-            </button>
-          </div>
-
-        </div>
-      </li>
-
-    </ul>
+    <CheckoutModal 
+      :is-open="isCheckoutModalOpen" 
+      @close="isCheckoutModalOpen = false" 
+    />
+    
+    <ScrollToTop />
   </div>
 </template>

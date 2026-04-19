@@ -6,6 +6,175 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vite App</title>
   </head>
+  <template>
+  <div class="flex min-h-screen bg-slate-50 font-sans text-slate-900">
+    
+    <aside class="w-72 bg-white border-r border-slate-200 hidden md:flex flex-col sticky top-0 h-screen">
+      <div class="p-6 border-b border-slate-100">
+        <h2 class="text-xl font-bold">Store</h2>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+        <p class="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-2 px-4">Categories</p>
+        <button @click="selectedCategory = ''" :class="[!selectedCategory ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">All Products</button>
+        <button v-for="cat in categories" :key="cat.slug" @click="selectedCategory = cat.slug" :class="[selectedCategory === cat.slug ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium capitalize hover:bg-slate-50 transition-colors">{{ cat.name }}</button>
+      </nav>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold">Your Cart</h3>
+          <span class="bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full">{{ cartCount }}</span>
+        </div>
+        <div class="max-h-64 overflow-y-auto space-y-3 mb-4 custom-scrollbar">
+          <div v-for="item in cart" :key="item.id" class="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-200">
+            <img :src="item.thumbnail" class="w-10 h-10 rounded object-cover bg-slate-100" />
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-bold truncate">{{ item.title }}</p>
+              <p class="text-[10px] text-slate-500">{{ item.quantity }} x ${{ item.price }}</p>
+            </div>
+            <button @click="removeFromCart(item.id)" class="text-slate-300 hover:text-red-500">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <p v-if="cart.length === 0" class="text-center text-xs text-slate-400 py-4">Cart is empty</p>
+        </div>
+        <div class="border-t border-slate-200 pt-3 flex justify-between items-center">
+          <span class="text-xs font-bold text-slate-500">Total</span>
+          <span class="text-lg font-black text-indigo-600">${{ cartTotal.toFixed(2) }}</span>
+        </div>
+        <button :disabled="cart.length === 0" class="w-full mt-3 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl disabled:opacity-50 hover:bg-indigo-700 transition-colors">Checkout</button>
+      </div>
+    </aside>
+
+    <main class="flex-1 p-8">
+      
+      <div class="max-w-2xl mx-auto mb-10">
+        <div class="relative group">
+          <input 
+            v-model="searchQuery"
+            type="text" 
+            placeholder="Search for amazing products..." 
+            class="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none text-slate-700 shadow-sm text-lg"
+          />
+          <span class="absolute left-4 top-4.5 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+        </div>
+      </div>
+
+      <section class="mb-12 relative overflow-hidden rounded-3xl bg-indigo-600 text-white p-8 md:p-12 shadow-lg shadow-indigo-200">
+        <div class="relative z-10 max-w-lg">
+          <span class="inline-block px-3 py-1 rounded-full bg-indigo-500 text-indigo-100 text-xs font-bold uppercase tracking-wider mb-4">Limited Offer</span>
+          <h2 class="text-4xl md:text-5xl font-black mb-4 leading-tight">Featured Collection 2026</h2>
+          <p class="text-indigo-100 text-lg mb-8">Discover our hand-picked selection of premium goods at unbeatable prices.</p>
+          <button @click="selectedCategory = 'laptops'" class="px-8 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition-colors shadow-lg">Shop Now</button>
+        </div>
+        
+        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full blur-3xl opacity-50 -mr-20 -mt-20"></div>
+        <div class="absolute bottom-0 right-0 w-96 h-96 bg-indigo-400 rounded-full blur-3xl opacity-20 -mr-32 -mb-32"></div>
+      </section>
+
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <h3 class="text-2xl font-bold text-slate-900">{{ selectedCategory ? 'Category: ' + selectedCategory : 'All Products' }}</h3>
+          <p class="text-slate-500">Showing {{ products.length }} items</p>
+        </div>
+      </div>
+
+      <ul class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+        <li v-for="product in products" :key="product.id" @click="openProductDetails(product)" class="cursor-pointer bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all flex flex-col group">
+          <div class="relative h-48 bg-slate-50 flex items-center justify-center p-4">
+            <img :src="product.thumbnail" class="h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+            <div class="absolute top-3 left-3">
+              <span class="px-2 py-1 bg-white/80 backdrop-blur rounded-md text-[10px] font-bold text-slate-500 uppercase tracking-tight shadow-sm">{{ product.category }}</span>
+            </div>
+          </div>
+          <div class="p-5 flex flex-col flex-1">
+            <div class="flex items-center gap-1 text-amber-500 text-xs font-bold mb-1">
+              ★ {{ product.rating }}
+            </div>
+            <h2 class="font-bold text-slate-900 line-clamp-1 mb-2">{{ product.title }}</h2>
+            <div class="mt-auto flex items-center justify-between pt-4">
+              <span class="text-xl font-black text-indigo-600">${{ product.price }}</span>
+              <button 
+                @click="addToCart(product)"
+                class="p-2 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-all active:scale-95 shadow-md"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </main>
+    <div v-if="selectedProduct" class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-10">
+  <div @click="closeProductDetails" class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+
+  <div class="relative bg-white w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl flex flex-col md:flex-row">
+    
+    <button @click="closeProductDetails" class="absolute top-5 right-5 z-10 p-2 bg-white rounded-full shadow-md hover:bg-slate-100 transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <div class="w-full md:w-1/2 bg-slate-50 p-8 flex items-center justify-center">
+      <img :src="selectedProduct.images[0] || selectedProduct.thumbnail" class="max-h-96 object-contain hover:scale-105 transition-transform duration-500" />
+    </div>
+
+    <div class="w-full md:w-1/2 p-8 md:p-12">
+      <div class="flex justify-between items-start mb-2">
+        <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest">{{ selectedProduct.brand || 'Premium Brand' }}</span>
+        <div class="flex items-center gap-1 text-amber-500 font-bold">★ {{ selectedProduct.rating }}</div>
+      </div>
+      
+      <h2 class="text-3xl font-black text-slate-900 mb-4">{{ selectedProduct.title }}</h2>
+      <p class="text-slate-500 leading-relaxed mb-6">{{ selectedProduct.description }}</p>
+
+      <div class="grid grid-cols-2 gap-4 mb-8">
+        <div class="p-3 bg-slate-50 rounded-xl">
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Price</p>
+          <p class="text-xl font-black text-indigo-600">${{ selectedProduct.price }} <span class="text-xs text-slate-400 line-through ml-2">${{ (selectedProduct.price * 1.1).toFixed(2) }}</span></p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl">
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Stock Status</p>
+          <p class="text-sm font-bold" :class="selectedProduct.stock > 0 ? 'text-emerald-600' : 'text-red-500'">{{ selectedProduct.availabilityStatus }} ({{ selectedProduct.stock }})</p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl">
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Shipping</p>
+          <p class="text-xs font-medium">{{ selectedProduct.shippingInformation }}</p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl">
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Warranty</p>
+          <p class="text-xs font-medium">{{ selectedProduct.warrantyInformation }}</p>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <h4 class="font-bold mb-3 text-slate-800">Customer Reviews</h4>
+        <div class="space-y-3">
+          <div v-for="(review, index) in selectedProduct.reviews" :key="index" class="text-xs border-b border-slate-100 pb-2">
+            <div class="flex justify-between font-bold text-slate-700">
+              <span>{{ review.reviewerName }}</span>
+              <span class="text-amber-500">★ {{ review.rating }}</span>
+            </div>
+            <p class="text-slate-500 italic mt-1">"{{ review.comment }}"</p>
+          </div>
+        </div>
+      </div>
+
+      <button @click="addToCart(selectedProduct)" class="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-95">
+        Add to Cart — ${{ selectedProduct.price }}
+      </button>
+    </div>
+  </div>
+</div>
+  </div>
+</template>
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
