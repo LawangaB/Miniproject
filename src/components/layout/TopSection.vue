@@ -82,6 +82,16 @@ const handleSearch = () => {
                 </span>
               </button>
             </div>
+            <router-link 
+  to="/orders" 
+  class="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all font-semibold"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  </svg>
+  
+  <span class="hidden sm:inline text-sm">My Orders</span>
+</router-link>
 
             <div v-if="isLoggedIn && user" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 pr-3 rounded-full border border-slate-200 dark:border-slate-700">
               <img :src="user?.image" class="w-8 h-8 rounded-full shadow-sm" alt="User Avatar" />

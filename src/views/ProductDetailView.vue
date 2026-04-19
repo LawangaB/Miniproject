@@ -146,7 +146,7 @@ onMounted(fetchProductData)
           <div>
             <h4 class="text-xs font-black text-slate-400 uppercase mb-3">Dimensions & Weight</h4>
             <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-              <li>Weight: <span class="font-bold text-slate-900 dark:text-slate-200">{{ product.weight }}kg</span></li>
+              <li>Weight: <span class="font-bold text-slate-900 dark:text-slate-200">{{ product.weight }}Kg</span></li>
               <li>Width: {{ product.dimensions?.width }}cm</li>
               <li>Height: {{ product.dimensions?.height }}cm</li>
               <li>Depth: {{ product.dimensions?.depth }}cm</li>
