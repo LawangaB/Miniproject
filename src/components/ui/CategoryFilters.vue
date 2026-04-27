@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { useRouter, useRoute } from 'vue-router'
 import { useProducts } from '../../composables/useProducts'
 
 const { categories, selectedCategory } = useProducts()
+const router = useRouter()
+const route = useRoute()
 
 const categoryColors = [
   'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50',
@@ -17,6 +20,16 @@ const categoryColors = [
 const getColorForIndex = (index: number) => {
   return categoryColors[index % categoryColors.length]
 }
+
+// NEW: Handle category selection + navigation
+const handleCategoryClick = (slug: string) => {
+  selectedCategory.value = slug
+  
+  // If user is currently looking at a product, send them home to see the filtered list
+  if (route.name === 'product-detail') {
+    router.push('/')
+  }
+}
 </script>
 
 <template>
@@ -27,7 +40,7 @@ const getColorForIndex = (index: number) => {
 
     <div class="flex flex-nowrap items-center gap-3 overflow-x-auto py-2 no-scrollbar scroll-smooth">
       <button 
-        @click="selectedCategory = ''"
+        @click="handleCategoryClick('')"
         :class="[
           !selectedCategory 
             ? 'bg-indigo-600 dark:bg-indigo-500 text-white scale-105 shadow-md' 
@@ -41,7 +54,7 @@ const getColorForIndex = (index: number) => {
       <button 
         v-for="(cat, index) in categories" 
         :key="cat.slug"
-        @click="selectedCategory = cat.slug"
+        @click="handleCategoryClick(cat.slug)"
         :class="[
           selectedCategory === cat.slug
             ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-900 bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 scale-105'
@@ -56,14 +69,6 @@ const getColorForIndex = (index: number) => {
 </template>
 
 <style scoped>
-/* 3. Hide scrollbar for Chrome, Safari and Opera */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

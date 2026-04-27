@@ -77,8 +77,21 @@ onMounted(fetchProductData)
       Back to Products
     </button>
 
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20">...</div>
-    <div v-else-if="error" class="text-center py-20">...</div>
+<!-- Loading -->
+<div v-if="loading" class="flex flex-col items-center justify-center py-20">
+  <div class="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
+  <p class="mt-4 text-slate-600">Loading product...</p>
+</div>
+
+<!-- Error -->
+<div v-else-if="error" class="text-center py-20">
+  <div class="flex justify-center">
+    <svg class="h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+    </svg>
+  </div>
+  <p class="mt-4 text-red-600 font-semibold">Product Not Found</p>
+</div>
 
     <div v-else-if="product">
       <div class="grid lg:grid-cols-2 gap-12 animate-fade-in mb-16">
