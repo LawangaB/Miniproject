@@ -47,37 +47,35 @@ const handleSortSelect = (
 
 <template>
   <aside 
-    :class="[
-      isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
-      'fixed top-0 left-0 h-screen w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transform transition-transform duration-300 ease-in-out overflow-hidden'
-    ]"
-  >
-    <div class="w-60 flex flex-col h-full">
-      
-      <div class="p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
-        <h2 class="text-xl font-bold dark:text-slate-100">Store</h2>
-      </div>
+  class="fixed top-0 left-0 h-screen w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transform transition-transform duration-300 ease-in-out overflow-hidden"
+  :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+>
+  <div class="w-60 flex flex-col h-full">
+    
+    <div class="p-6 border-b border-slate-100 dark:border-slate-800 shrink-0">
+      <h2 class="text-xl font-bold dark:text-slate-100">Store</h2>
+    </div>
 
-      <nav class="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
-        
-        <div class="flex items-center justify-between px-4 mb-2">
-          <p class="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest">Categories</p>
-          <button 
-            @click="isCategoriesOpen = !isCategoriesOpen"
-            class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+    <nav class="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
+      
+      <div class="flex items-center justify-between px-4 mb-2">
+        <p class="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest">Categories</p>
+        <button 
+          @click="isCategoriesOpen = !isCategoriesOpen"
+          class="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            class="h-4 w-4 transition-transform duration-300" 
+            :class="isCategoriesOpen ? 'rotate-0' : '-rotate-90'"
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
           >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              class="h-4 w-4 transition-transform duration-300" 
-              :class="isCategoriesOpen ? 'rotate-0' : '-rotate-90'"
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </button>
-        </div>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </button>
+      </div>
         
         <div v-show="isCategoriesOpen" class="space-y-1">
           <button @click="handleCategorySelect('')" :class="[!selectedCategory ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300' : 'text-slate-600 dark:text-slate-400']" class="w-full text-left px-4 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
