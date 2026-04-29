@@ -19,6 +19,7 @@ const savedOrders = localStorage.getItem('ecommerce_orders')
 // 3. Initialize state with saved data (or empty arrays if first time)
 const cart = ref<CartItem[]>(savedCart ? JSON.parse(savedCart) : [])
 const processingOrders = ref<Order[]>(savedOrders ? JSON.parse(savedOrders) : [])
+import { useToast } from './useToast'
 
 // 4. Auto-Save Watchers (Deep true ensures it saves when quantities change inside the array)
 watch(cart, (newCart) => {
@@ -30,6 +31,8 @@ watch(processingOrders, (newOrders) => {
 }, { deep: true })
 
 export function useCart() {
+  const { addToast } = useToast()
+
   
   const addToCart = (product: Product) => {
     const existingItem = cart.value.find(item => item.id === product.id)
@@ -38,6 +41,7 @@ export function useCart() {
     } else {
       cart.value.push({ ...product, quantity: 1 })
     }
+    addToast(`${product.title} added to cart!`, 'success')
   }
 
   const removeFromCart = (id: number) => {
@@ -51,6 +55,23 @@ export function useCart() {
   const cartCount = computed(() => {
     return cart.value.reduce((sum, item) => sum + item.quantity, 0)
   })
+  const updateQuantity = (productId: number, delta: number) => {
+    const item = cart.value.find(i => i.id === productId)
+    
+    if (item) {
+      item.quantity += delta
+      
+      // If the user decreases quantity to 0 (or below), remove the item completely
+      if (item.quantity <= 0) {
+        cart.value = cart.value.filter(i => i.id !== productId)
+      }
+    }
+    if (delta === -1) {
+      addToast('Item quantity decreased', 'info')
+    } else if (delta === 1) {
+      addToast('Item quantity increased', 'info')
+    }
+}
 
   // 5. The Checkout Function
   const placeOrder = (shippingDetails: any = {}) => {
@@ -79,6 +100,7 @@ export function useCart() {
     addToCart, 
     removeFromCart, 
     cartTotal, 
+    updateQuantity,
     cartCount,
     placeOrder 
   }

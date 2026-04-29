@@ -21,6 +21,9 @@ const route = useRoute()
 const router = useRouter()
 const { searchQuery, fetchProducts } = useProducts()
 
+// 1. Reactive state for the mobile search toggle
+const isMobileSearchOpen = ref(false)
+
 const emit = defineEmits(['checkout-clicked'])
 
 const totalItems = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0))
@@ -52,7 +55,8 @@ const showFilters = computed(() => {
       <div class="px-4 lg:px-8 pt-1 pb-0">
         <div class="flex items-center justify-between gap-4">
           
-          <div class="shrink-0">
+          <div class="shrink-0 flex items-center gap-2">
+  
   <button 
     @click="toggleSidebar" 
     class="p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
@@ -64,9 +68,20 @@ const showFilters = computed(() => {
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
     </svg>
   </button>
+
+  <button 
+    @click="isMobileSearchOpen = !isMobileSearchOpen" 
+    class="p-2 rounded-xl bg-white/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer lg:hidden"
+    :class="{ 'bg-slate-100 dark:bg-slate-700': isMobileSearchOpen }"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  </button>
+
 </div>
 
-          <div class="flex-1 max-w-2xl">
+          <div class="hidden lg:block flex-1 max-w-2xl">
             <SearchBar />
           </div>
 
@@ -120,6 +135,12 @@ const showFilters = computed(() => {
           </div>
         </div>
 
+        <Transition name="slide-down">
+          <div v-if="isMobileSearchOpen" class="mt-4 w-full lg:hidden">
+            <SearchBar />
+          </div>
+        </Transition>
+
         <Transition name="slide-up">
           <div v-if="showFilters" class="mt-4 w-full overflow-hidden">
             <CategoryFilters />
@@ -140,7 +161,7 @@ const showFilters = computed(() => {
 </template>
 
 <style scoped>
-/* THE FIX: CSS for the smooth hiding transition */
+/* Existing Filters Transition */
 .slide-up-enter-active, .slide-up-leave-active {
   transition: all 0.3s ease;
 }
@@ -152,6 +173,21 @@ const showFilters = computed(() => {
 .slide-up-enter-to, .slide-up-leave-from {
   opacity: 1;
   transform: translateY(0);
-  max-height: 100px; /* Provides enough height for the filters to collapse gracefully */
+  max-height: 100px;
+}
+
+/* NEW: Mobile Search Dropdown Transition */
+.slide-down-enter-active, .slide-down-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-down-enter-from, .slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+}
+.slide-down-enter-to, .slide-down-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 60px; /* Search bar height allowance */
 }
 </style>

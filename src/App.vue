@@ -7,28 +7,27 @@ import ScrollToTop from './components/ui/ScrollToTop.vue'
 import Sidebar from './components/layout/SideBar.vue'
 import CheckoutModal from './components/products/CheckoutModal.vue'
 import TopSection from './components/layout/TopSection.vue'
+import ToastContainer from './components/ui/ToastContainer.vue' 
 
 const route = useRoute()
-
-// 1. Destructure `toggleSidebar` so we can use it to close the mobile overlay
 const { isSidebarOpen, toggleSidebar } = useSidebar() 
 const isCheckoutModalOpen = ref(false)
-
 const mainContent = ref<HTMLElement | null>(null)
 
+// Reset scroll to top on route change
 watch(() => route.path, () => {
   if (mainContent.value) {
     mainContent.value.scrollTo({ top: 0, behavior: 'smooth' })
   }
 })
 
+// Initialize theme (Light/Dark mode logic)
 useTheme() 
 </script>
 
 <template>
   <div 
-    class="flex h-screen overflow-hidden w-full bg-slate-50 font-sans text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-[padding] duration-300 ease-in-out"
-    
+    class="flex h-screen overflow-hidden w-full bg-slate-50 font-sans text-slate-900 dark:bg-slate-900 dark:text-slate-100 transition-[padding] duration-300 ease-in-out transform-gpu"
     :class="isSidebarOpen ? 'lg:pl-60' : 'pl-0'"
   >
     
@@ -46,7 +45,6 @@ useTheme()
       ref="mainContent"
       class="flex-1 h-full overflow-y-auto relative flex flex-col custom-scrollbar"
     >
-      
       <div class="sticky top-0 z-50 w-full backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors duration-300">
         <TopSection @checkout-clicked="isCheckoutModalOpen = true" />
       </div>
@@ -54,7 +52,6 @@ useTheme()
       <div class="flex-1">
         <router-view />
       </div>
-
     </main>
 
     <CheckoutModal 
@@ -63,11 +60,14 @@ useTheme()
     />
     
     <ScrollToTop />
+
+    <ToastContainer />
+    
   </div>
 </template>
 
 <style scoped>
-/* Smooth fade for the mobile background overlay */
+/* Standard Fade Animation for Mobile Overlay */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -75,5 +75,11 @@ useTheme()
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Ensure no transitions mess with the layout on the main tag */
+main {
+  backface-visibility: hidden;
+  will-change: scroll-position;
 }
 </style>

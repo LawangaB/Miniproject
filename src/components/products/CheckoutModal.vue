@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const { user, isLoggedIn } = useAuth()
-const { cart, cartTotal, placeOrder } = useCart() 
+const { cart, cartTotal, placeOrder, updateQuantity } = useCart() 
 const isOpen = toRef(props, 'isOpen')
 
 const formData = ref({
@@ -92,63 +92,92 @@ const resetForm = () => {
 <template>
   <Teleport to="body">
     <transition name="modal-fade">
-      <div 
-        v-if="isOpen"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-        @click.self="$emit('close')" 
-      >
-        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col relative animate-fade-in-up">
-          
-          <div class="absolute top-4 right-4 z-20">
-            <button 
-              @click="$emit('close')" 
-              class="p-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-full text-slate-500 hover:text-red-500 transition-colors cursor-pointer shadow-sm"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div 
+          class="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800"
+          @click.stop
+        >
+          <!-- Header -->
+          <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Checkout</h2>
+            <button @click="$emit('close')" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
-          <div class="p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800">
-            <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Checkout</h2>
-            <div v-if="isLoggedIn" class="mt-2 inline-flex items-center gap-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded-md">
-              <span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              Authenticated: {{ user?.name }}
+          <!-- Success State -->
+          <div v-if="orderPlaced" class="flex-1 flex flex-col items-center justify-center p-12 text-center">
+            <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-          </div>
-
-          <div v-if="orderPlaced" class="flex items-center justify-center h-96 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20">
-            <div class="text-center">
-              <div class="mb-4 flex justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-600 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 class="text-2xl font-bold text-green-600 mb-2">Order Placed!</h3>
-              <p class="text-slate-600 dark:text-slate-300">Thank you for your purchase</p>
-            </div>
+            <h3 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Order Placed!</h3>
+            <p class="text-slate-500">Redirecting to your orders...</p>
           </div>
 
           <div v-else class="flex-1 overflow-y-auto custom-scrollbar">
-            <div class="p-6 sm:p-8 space-y-6">
-              
-              <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-3">Order Summary</h3>
-                <div class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-                  <div v-for="item in cart" :key="item.id" class="flex justify-between text-sm">
-                    <span class="text-slate-600 dark:text-slate-400">{{ item.title }} x {{ item.quantity }}</span>
-                    <span class="font-semibold text-slate-900 dark:text-white">${{ (item.price * item.quantity).toFixed(2) }}</span>
-                  </div>
-                </div>
-                <div class="border-t border-slate-200 dark:border-slate-700 mt-3 pt-3 flex justify-between font-bold">
-                  <span class="text-slate-900 dark:text-white">Total:</span>
-                  <span class="text-lg text-indigo-600 dark:text-indigo-400">${{ cartTotal.toFixed(2) }}</span>
-                </div>
-              </div>
+  <div class="p-6 sm:p-8 space-y-6">
+    
+    <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+      <h3 class="font-bold text-slate-900 dark:text-white mb-3">Order Summary</h3>
+      
+      <div class="space-y-1 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+        <div 
+          v-for="item in cart" 
+          :key="item.id" 
+          class="flex items-center justify-between gap-3 py-3 border-b border-slate-200/50 dark:border-slate-700/50 last:border-0"
+        >
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">
+              {{ item.title }}
+            </p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              ${{ item.price.toFixed(2) }} each
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-lg p-1 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <button 
+              type="button"
+              @click="updateQuantity(item.id, -1)" 
+              class="w-6 h-6 flex items-center justify-center rounded bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-red-500 transition-colors cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+              </svg>
+            </button>
+            
+            <span class="text-xs font-bold w-4 text-center text-slate-900 dark:text-white">
+              {{ item.quantity }}
+            </span>
+            
+            <button 
+              type="button"
+              @click="updateQuantity(item.id, 1)" 
+              class="w-6 h-6 flex items-center justify-center rounded bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="text-right shrink-0 min-w-[70px]">
+            <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+              ${{ (item.price * item.quantity).toFixed(2) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-200 dark:border-slate-700 mt-3 pt-3 flex justify-between font-bold">
+        <span class="text-slate-900 dark:text-white">Total:</span>
+        <span class="text-lg text-indigo-600 dark:text-indigo-400">${{ cartTotal.toFixed(2) }}</span>
+      </div>
+    </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
